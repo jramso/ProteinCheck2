@@ -1,0 +1,7 @@
+{
+  "name": "Proteína Check-in",
+  "description": "A comprehensive protein tracking application with meal scanning, history, and personalized goals.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
