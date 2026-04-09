@@ -5,7 +5,7 @@ import { Plus, ChevronRight } from 'lucide-react';
 interface DashboardProps {
   user: UserProfile;
   meals: Meal[];
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, meal?: Meal) => void;
 }
 
 export default function Dashboard({ user, meals, onNavigate }: DashboardProps) {
@@ -91,7 +91,11 @@ export default function Dashboard({ user, meals, onNavigate }: DashboardProps) {
         <div className="space-y-4">
           {todaysMeals.length > 0 ? (
             todaysMeals.slice(0, 3).map((meal) => (
-              <div key={meal.id} className="group bg-white hover:bg-slate-50 transition-all p-4 rounded-3xl flex items-center gap-4 border border-slate-100 shadow-sm">
+              <button 
+                key={meal.id} 
+                onClick={() => onNavigate('add-meal', meal)}
+                className="w-full group bg-white hover:bg-slate-50 transition-all p-4 rounded-3xl flex items-center gap-4 border border-slate-100 shadow-sm text-left"
+              >
                 <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
                   <img 
                     className="w-full h-full object-cover" 
@@ -112,7 +116,7 @@ export default function Dashboard({ user, meals, onNavigate }: DashboardProps) {
                   </div>
                 </div>
                 <ChevronRight className="text-slate-200" size={20} />
-              </div>
+              </button>
             ))
           ) : (
             <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200">

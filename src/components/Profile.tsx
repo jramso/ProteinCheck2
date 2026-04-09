@@ -13,17 +13,20 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
   const [goal, setGoal] = useState(user.proteinGoal);
   const [multiplier, setMultiplier] = useState(user.multiplier);
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSuccess(false);
     try {
       await updateDoc(doc(db, 'users', user.uid), {
         weight,
         proteinGoal: goal,
         multiplier,
       });
-      alert('Perfil atualizado!');
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error("Error updating profile:", error);
     } finally {
@@ -84,24 +87,43 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
         </div>
 
         <form onSubmit={handleUpdate} className="space-y-6">
-          <div>
-            <label className="text-[10px] uppercase tracking-widest font-bold text-slate-400 block mb-3 ml-1">Editar Meta Manual</label>
-            <div className="relative flex items-center">
-              <input 
-                type="number"
-                value={goal}
-                onChange={(e) => setGoal(Number(e.target.value))}
-                className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-lg font-black text-slate-900 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
-              />
-              <span className="absolute right-6 font-bold text-slate-400">g / dia</span>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] uppercase tracking-widest font-bold text-slate-400 block mb-3 ml-1">Peso (kg)</label>
+              <div className="relative flex items-center">
+                <input 
+                  type="number"
+                  step="0.1"
+                  value={weight}
+                  onChange={(e) => {
+                    const newWeight = Number(e.target.value);
+                    setWeight(newWeight);
+                    // Optionally auto-update goal if multiplier is active
+                    setGoal(Math.round(newWeight * multiplier));
+                  }}
+                  className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-lg font-black text-slate-900 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] uppercase tracking-widest font-bold text-slate-400 block mb-3 ml-1">Meta (g)</label>
+              <div className="relative flex items-center">
+                <input 
+                  type="number"
+                  value={goal}
+                  onChange={(e) => setGoal(Number(e.target.value))}
+                  className="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-lg font-black text-slate-900 focus:ring-2 focus:ring-indigo-100 transition-all outline-none"
+                />
+              </div>
             </div>
           </div>
+          
           <button 
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black tracking-tight text-lg hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-100"
+            className={`w-full py-5 rounded-2xl font-black tracking-tight text-lg transition-all active:scale-95 shadow-lg ${success ? 'bg-emerald-500 text-white shadow-emerald-100' : 'bg-indigo-600 text-white shadow-indigo-100 hover:bg-indigo-700'}`}
           >
-            {loading ? 'Atualizando...' : 'Atualizar Meta'}
+            {loading ? 'Atualizando...' : success ? 'Perfil Atualizado!' : 'Salvar Alterações'}
           </button>
         </form>
       </section>

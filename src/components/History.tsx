@@ -5,7 +5,7 @@ import { Calendar, History as HistoryIcon, Award } from 'lucide-react';
 interface HistoryProps {
   user: UserProfile;
   meals: Meal[];
-  onNavigate: (screen: Screen) => void;
+  onNavigate: (screen: Screen, meal?: Meal) => void;
 }
 
 export default function History({ user, meals, onNavigate }: HistoryProps) {
@@ -50,26 +50,34 @@ export default function History({ user, meals, onNavigate }: HistoryProps) {
       </div>
 
       {/* Daily Logs */}
-      <div className="space-y-6">
+      <div className="space-y-8">
         {Object.entries(groupedMeals).map(([date, data]: any) => (
-          <div key={date} className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">{date}</h3>
-            <div className="bg-white rounded-3xl p-5 flex items-center justify-between border border-slate-100 shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                  <Calendar size={24} />
-                </div>
-                <div>
-                  <p className="font-bold text-slate-900">{data.meals.length} refeições</p>
-                  <p className="text-xs text-slate-400 font-medium">Total do dia</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-xl font-black text-indigo-600">{data.total}g</p>
-                <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-widest ${data.total >= user.proteinGoal ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
-                  {data.total >= user.proteinGoal ? 'Meta Batida' : 'Abaixo da Meta'}
-                </span>
-              </div>
+          <div key={date} className="space-y-4">
+            <div className="flex justify-between items-center px-1">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">{date}</h3>
+              <span className="text-xs font-black text-indigo-600">{data.total}g</span>
+            </div>
+            <div className="space-y-2">
+              {data.meals.map((meal: Meal) => (
+                <button 
+                  key={meal.id} 
+                  onClick={() => onNavigate('add-meal', meal)}
+                  className="w-full bg-white rounded-2xl p-4 flex items-center justify-between border border-slate-100 shadow-sm hover:bg-slate-50 transition-all text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                      <HistoryIcon size={20} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900 text-sm">{meal.name}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                        {meal.timestamp?.toDate ? meal.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="font-black text-indigo-600">+{meal.protein}g</p>
+                </button>
+              ))}
             </div>
           </div>
         ))}

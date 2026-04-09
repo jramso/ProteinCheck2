@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { UserProfile, Screen } from '../types';
-import { ArrowLeft, CheckCircle, Bolt, Utensils, Egg, Dumbbell, Apple } from 'lucide-react';
-import { db, collection, addDoc, serverTimestamp } from '../firebase';
+import React, { useState, useEffect } from 'react';
+import { UserProfile, Screen, Meal } from '../types';
+import { ArrowLeft, CheckCircle, Bolt, Utensils, Egg, Dumbbell, Apple, Trash2 } from 'lucide-react';
+import { db, collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc } from '../firebase';
 
 interface AddMealProps {
   user: UserProfile;
+  meal?: Meal | null;
   onNavigate: (screen: Screen) => void;
 }
 
@@ -15,23 +16,52 @@ const QUICK_FOODS = [
   { name: 'Iogurte Grego', protein: 10, icon: <Apple size={20} /> },
 ];
 
-export default function AddMeal({ user, onNavigate }: AddMealProps) {
-  const [name, setName] = useState('');
-  const [protein, setProtein] = useState<number>(0);
+export default function AddMeal({ user, meal, onNavigate }: AddMealProps) {
+  const [name, setName] = useState(meal?.name || '');
+  const [protein, setProtein] = useState<number>(meal?.protein || 0);
   const [loading, setLoading] = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+
+  useEffect(() => {
+    if (meal) {
+      setName(meal.name);
+      setProtein(meal.protein);
+    }
+  }, [meal]);
 
   const handleSave = async () => {
     if (!name || protein <= 0) return;
     setLoading(true);
     try {
-      await addDoc(collection(db, 'users', user.uid, 'meals'), {
-        name,
-        protein,
-        timestamp: serverTimestamp(),
-      });
+      if (meal?.id) {
+        await updateDoc(doc(db, 'users', user.uid, 'meals', meal.id), {
+          name,
+          protein,
+        });
+      } else {
+        await addDoc(collection(db, 'users', user.uid, 'meals'), {
+          name,
+          protein,
+          timestamp: serverTimestamp(),
+        });
+      }
       onNavigate('dashboard');
     } catch (error) {
       console.error("Error saving meal:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!meal?.id) return;
+    
+    setLoading(true);
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, 'meals', meal.id));
+      onNavigate('dashboard');
+    } catch (error) {
+      console.error("Error deleting meal:", error);
     } finally {
       setLoading(false);
     }
@@ -52,7 +82,9 @@ export default function AddMeal({ user, onNavigate }: AddMealProps) {
         >
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-2xl font-black tracking-tighter text-slate-900">Adicionar Refeição</h1>
+        <h1 className="text-2xl font-black tracking-tighter text-slate-900">
+          {meal ? 'Editar Refeição' : 'Adicionar Refeição'}
+        </h1>
       </header>
 
       <div className="space-y-8 max-w-md mx-auto">
@@ -119,7 +151,7 @@ export default function AddMeal({ user, onNavigate }: AddMealProps) {
         </section>
 
         {/* Save Button */}
-        <section className="pt-2">
+        <section className="pt-2 space-y-3">
           <button
             onClick={handleSave}
             disabled={loading || !name || protein <= 0}
@@ -127,11 +159,43 @@ export default function AddMeal({ user, onNavigate }: AddMealProps) {
           >
             {loading ? 'Salvando...' : (
               <>
-                <span>Salvar Refeição</span>
+                <span>{meal ? 'Atualizar Refeição' : 'Salvar Refeição'}</span>
                 <CheckCircle size={20} />
               </>
             )}
           </button>
+
+          {meal && (
+            <div className="space-y-2">
+              {!showConfirmDelete ? (
+                <button
+                  onClick={() => setShowConfirmDelete(true)}
+                  disabled={loading}
+                  className="w-full py-4 bg-rose-50 text-rose-600 font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                >
+                  <Trash2 size={20} />
+                  Remover Refeição
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="flex-1 py-4 bg-rose-600 text-white font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    Confirmar Exclusão
+                  </button>
+                  <button
+                    onClick={() => setShowConfirmDelete(false)}
+                    disabled={loading}
+                    className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       </div>
     </div>

@@ -14,6 +14,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard');
   const [meals, setMeals] = useState<Meal[]>([]);
+  const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -78,6 +79,22 @@ export default function App() {
     }
   };
 
+  const handleGuestLogin = () => {
+    const guestUser: UserProfile = {
+      uid: 'guest-123',
+      displayName: 'Visitante',
+      email: 'visitante@exemplo.com',
+      photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=guest`,
+      weight: 70,
+      proteinGoal: 140,
+      multiplier: 2.0,
+      autoCalculate: true,
+      createdAt: new Date().toISOString(),
+    };
+    setUser(guestUser);
+    setLoading(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -94,13 +111,23 @@ export default function App() {
         </div>
         <h1 className="text-4xl font-black tracking-tighter text-slate-900 mb-4">Proteína Check-in</h1>
         <p className="text-slate-500 mb-12 max-w-xs">Acompanhe sua ingestão de proteína diária com facilidade e precisão.</p>
-        <button
-          onClick={handleLogin}
-          className="w-full max-w-xs py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-3"
-        >
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
-          Entrar com Google
-        </button>
+        
+        <div className="w-full max-w-xs space-y-4">
+          <button
+            onClick={handleLogin}
+            className="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+          >
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
+            Entrar com Google
+          </button>
+
+          <button
+            onClick={handleGuestLogin}
+            className="w-full py-4 bg-white text-slate-600 font-bold rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all active:scale-95"
+          >
+            Entrar como Visitante
+          </button>
+        </div>
       </div>
     );
   }
@@ -108,11 +135,22 @@ export default function App() {
   const renderScreen = () => {
     switch (currentScreen) {
       case 'dashboard':
-        return <Dashboard user={user} meals={meals} onNavigate={setCurrentScreen} />;
+        return <Dashboard user={user} meals={meals} onNavigate={(s, m) => {
+          if (m) setEditingMeal(m);
+          else setEditingMeal(null);
+          setCurrentScreen(s);
+        }} />;
       case 'add-meal':
-        return <AddMeal user={user} onNavigate={setCurrentScreen} />;
+        return <AddMeal user={user} meal={editingMeal} onNavigate={(s) => {
+          setEditingMeal(null);
+          setCurrentScreen(s);
+        }} />;
       case 'history':
-        return <History user={user} meals={meals} onNavigate={setCurrentScreen} />;
+        return <History user={user} meals={meals} onNavigate={(s, m) => {
+          if (m) setEditingMeal(m);
+          else setEditingMeal(null);
+          setCurrentScreen(s);
+        }} />;
       case 'profile':
         return <Profile user={user} onNavigate={setCurrentScreen} />;
       case 'scan':
