@@ -9,10 +9,12 @@
         "displayName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "photoURL": { "type": "string", "format": "uri" },
-        "weight": { "type": "number", "description": "Current weight in kg" },
+        "weight": { "type": "number", "description": "Current weight" },
+        "height": { "type": "number", "description": "Height in cm" },
         "proteinGoal": { "type": "number", "description": "Daily protein goal in grams" },
         "multiplier": { "type": "number", "description": "Protein multiplier (e.g., 2.0)" },
         "autoCalculate": { "type": "boolean" },
+        "weightUnit": { "type": "string", "enum": ["kg", "lb"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "email"]

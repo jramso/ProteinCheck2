@@ -1,5 +1,5 @@
 import React from 'react';
-import { Screen } from '../types';
+import { Screen } from '../models/types';
 import { LayoutDashboard, History, User, Bell, Menu } from 'lucide-react';
 
 interface LayoutProps {

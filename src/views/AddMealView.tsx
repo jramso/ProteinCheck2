@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { UserProfile, Screen, Meal } from '../types';
-import { ArrowLeft, CheckCircle, Bolt, Utensils, Egg, Dumbbell, Apple, Trash2 } from 'lucide-react';
-import { db, collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc } from '../firebase';
+import React, { useState, useEffect, useRef } from 'react';
+import { UserProfile, Screen, Meal } from '../models/types';
+import { ArrowLeft, CheckCircle, Bolt, Utensils, Egg, Dumbbell, Apple, Trash2, Search, Loader2 } from 'lucide-react';
+import { db, collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc } from '../services/firebaseService';
+import { fatSecretService, FatSecretFood } from '../services/fatsecretService';
 
 interface AddMealProps {
   user: UserProfile;
@@ -16,11 +17,52 @@ const QUICK_FOODS = [
   { name: 'Iogurte Grego', protein: 10, icon: <Apple size={20} /> },
 ];
 
-export default function AddMeal({ user, meal, onNavigate }: AddMealProps) {
+export default function AddMealView({ user, meal, onNavigate }: AddMealProps) {
   const [name, setName] = useState(meal?.name || '');
   const [protein, setProtein] = useState<number>(meal?.protein || 0);
   const [loading, setLoading] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<FatSecretFood[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length < 3) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    setSearching(true);
+    setShowResults(true);
+    const results = await fatSecretService.search(query);
+    setSearchResults(results);
+    setSearching(false);
+  };
+
+  const selectFood = (food: FatSecretFood) => {
+    setName(food.food_name);
+    const proteinMatch = food.food_description.match(/Protein: ([\d.]+)g/);
+    if (proteinMatch) {
+      setProtein(Math.round(parseFloat(proteinMatch[1])));
+    }
+    setShowResults(false);
+    setSearchQuery('');
+  };
 
   useEffect(() => {
     if (meal) {
@@ -74,7 +116,6 @@ export default function AddMeal({ user, meal, onNavigate }: AddMealProps) {
 
   return (
     <div className="px-6 pb-12">
-      {/* Header */}
       <header className="flex items-center gap-4 mb-8">
         <button 
           onClick={() => onNavigate('dashboard')}
@@ -88,7 +129,43 @@ export default function AddMeal({ user, meal, onNavigate }: AddMealProps) {
       </header>
 
       <div className="space-y-8 max-w-md mx-auto">
-        {/* Name Input */}
+        <section className="space-y-2 relative" ref={searchRef}>
+          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Buscar na Base FatSecret</label>
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder="Pesquisar alimento..."
+              className="w-full bg-white border border-slate-100 rounded-2xl pl-12 pr-5 py-4 text-slate-900 placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 outline-none transition-all font-bold"
+            />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+            {searching && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-indigo-600 animate-spin" size={20} />}
+          </div>
+
+          {showResults && (searchResults.length > 0 || searching) && (
+            <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 max-h-64 overflow-y-auto overflow-x-hidden">
+              {searching ? (
+                <div className="p-8 flex flex-col items-center gap-2">
+                  <Loader2 className="text-indigo-600 animate-spin" size={24} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Buscando...</span>
+                </div>
+              ) : (
+                searchResults.map((food) => (
+                  <button
+                    key={food.food_id}
+                    onClick={() => selectFood(food)}
+                    className="w-full text-left p-4 hover:bg-slate-50 border-b border-slate-50 last:border-none transition-colors"
+                  >
+                    <p className="font-bold text-slate-900">{food.food_name}</p>
+                    <p className="text-[10px] text-slate-400 font-medium truncate">{food.food_description}</p>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </section>
+
         <section className="space-y-2">
           <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Nome da Refeição</label>
           <input
@@ -100,7 +177,6 @@ export default function AddMeal({ user, meal, onNavigate }: AddMealProps) {
           />
         </section>
 
-        {/* Protein Input */}
         <section className="space-y-4">
           <div className="flex justify-between items-end">
             <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Proteína (g)</label>
@@ -118,7 +194,6 @@ export default function AddMeal({ user, meal, onNavigate }: AddMealProps) {
           </div>
         </section>
 
-        {/* Quick Foods */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <Bolt className="text-indigo-600" size={20} />
@@ -139,7 +214,6 @@ export default function AddMeal({ user, meal, onNavigate }: AddMealProps) {
           </div>
         </section>
 
-        {/* Scan Button */}
         <section className="pt-4">
           <button 
             onClick={() => onNavigate('scan')}
@@ -150,7 +224,6 @@ export default function AddMeal({ user, meal, onNavigate }: AddMealProps) {
           </button>
         </section>
 
-        {/* Save Button */}
         <section className="pt-2 space-y-3">
           <button
             onClick={handleSave}

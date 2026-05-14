@@ -4,10 +4,12 @@ export interface UserProfile {
   email: string | null;
   photoURL: string | null;
   weight: number;
+  height: number;
   proteinGoal: number;
   multiplier: number;
   autoCalculate: boolean;
-  createdAt: any;
+  weightUnit?: 'kg' | 'lb';
+  createdAt: string;
 }
 
 export interface Meal {

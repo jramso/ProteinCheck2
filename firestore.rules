@@ -15,9 +15,11 @@ service cloud.firestore {
     //   - email: string (required)
     //   - photoURL: string (optional)
     //   - weight: number (optional)
+    //   - height: number (optional)
     //   - proteinGoal: number (optional)
     //   - multiplier: number (optional)
     //   - autoCalculate: bool (optional)
+    //   - weightUnit: string (optional)
     //   - createdAt: timestamp (optional)
     //
     // Collection: users/{userId}/meals
@@ -51,9 +53,11 @@ service cloud.firestore {
              data.uid == request.auth.uid &&
              isValidEmail(data.email) &&
              (!('weight' in data) || data.weight is number) &&
+             (!('height' in data) || data.height is number) &&
              (!('proteinGoal' in data) || data.proteinGoal is number) &&
              (!('multiplier' in data) || data.multiplier is number) &&
-             (!('autoCalculate' in data) || data.autoCalculate is bool);
+             (!('autoCalculate' in data) || data.autoCalculate is bool) &&
+             (!('weightUnit' in data) || (data.weightUnit in ['kg', 'lb']));
     }
 
     function isValidMeal(data) {

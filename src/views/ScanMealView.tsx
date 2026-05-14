@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { UserProfile, Screen } from '../types';
+import React, { useState, useRef } from 'react';
+import { UserProfile, Screen } from '../models/types';
 import { ArrowLeft, Camera, Loader2, CheckCircle, Info } from 'lucide-react';
-import { db, collection, addDoc, serverTimestamp } from '../firebase';
+import { db, collection, addDoc, serverTimestamp } from '../services/firebaseService';
+import { fatSecretService } from '../services/fatsecretService';
 import { GoogleGenAI } from "@google/genai";
 
 interface ScanMealProps {
@@ -9,18 +10,99 @@ interface ScanMealProps {
   onNavigate: (screen: Screen) => void;
 }
 
-export default function ScanMeal({ user, onNavigate }: ScanMealProps) {
+export default function ScanMealView({ user, onNavigate }: ScanMealProps) {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<{ name: string; protein: number } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleScan = async () => {
+  const processImage = async (base64Image: string) => {
     setScanning(true);
-    // Simulate AI scanning
-    setTimeout(() => {
-      setResult({ name: 'Frango Grelhado com Salada', protein: 35 });
+    setError(null);
+    try {
+      let foodName = '';
+      const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+      
+      try {
+        const recognitionResult = await fatSecretService.recognize(base64Image);
+        if (recognitionResult && recognitionResult.food_predictions) {
+          foodName = recognitionResult.food_predictions.food_prediction[0].food_name;
+        }
+      } catch (fsErr) {
+        console.warn("FatSecret Recognition failed, falling back to Gemini", fsErr);
+      }
+
+      if (!foodName) {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const prompt = "Identifique o alimento principal nesta imagem e retorne APENAS o nome do alimento em português. Exemplo: 'Frango Grelhado'.";
+        
+        const response = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: {
+            parts: [
+              { text: prompt },
+              { inlineData: { mimeType: "image/jpeg", data: base64Data } }
+            ]
+          }
+        });
+        
+        foodName = response.text.trim().replace(/[*_#]/g, '');
+      }
+
+      if (!foodName) throw new Error("Não foi possível identificar o alimento.");
+
+      try {
+        const searchResults = await fatSecretService.search(foodName);
+        if (searchResults.length > 0) {
+          const food = searchResults[0];
+          const proteinMatch = food.food_description.match(/Protein: ([\d.]+)g/);
+          setResult({
+            name: food.food_name,
+            protein: proteinMatch ? Math.round(parseFloat(proteinMatch[1])) : 0
+          });
+          setScanning(false);
+          return;
+        }
+      } catch (searchErr) {
+        console.warn("FatSecret Search failed, using Gemini for estimation", searchErr);
+      }
+
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const proteinPrompt = `Estime a quantidade de proteína (em gramas) para uma porção média de '${foodName}'. Retorne APENAS o número.`;
+      
+      const proteinResponse = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: proteinPrompt
+      });
+      
+      const estimatedProtein = parseInt(proteinResponse.text.replace(/\D/g, '')) || 0;
+      setResult({
+        name: foodName,
+        protein: estimatedProtein
+      });
+    } catch (err: any) {
+      console.error("Scan Error:", err);
+      setError("Erro ao processar imagem. Tente novamente ou insira manualmente.");
+    } finally {
       setScanning(false);
-    }, 2000);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      processImage(base64String);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleScan = () => {
+    fileInputRef.current?.click();
   };
 
   const handleConfirm = async () => {
@@ -56,7 +138,6 @@ export default function ScanMeal({ user, onNavigate }: ScanMealProps) {
       </header>
 
       <div className="max-w-md mx-auto space-y-8">
-        {/* Viewfinder */}
         <div className="relative rounded-[2.5rem] overflow-hidden aspect-[4/5] bg-slate-900 flex items-center justify-center shadow-2xl shadow-indigo-100">
           <img 
             className="absolute inset-0 w-full h-full object-cover opacity-60" 
@@ -70,26 +151,40 @@ export default function ScanMeal({ user, onNavigate }: ScanMealProps) {
               <div className="w-full h-1 bg-indigo-400 shadow-[0_0_15px_#4f46e5] animate-scan"></div>
               <div className="mt-8 p-6 bg-white/10 backdrop-blur-xl rounded-3xl flex flex-col items-center gap-3 border border-white/20">
                 <Loader2 className="text-white animate-spin" size={32} />
-                <span className="text-white font-bold tracking-widest text-[10px] uppercase">Identificando Nutrientes</span>
+                <span className="text-white font-bold tracking-widest text-[10px] uppercase">Analisando via FatSecret</span>
               </div>
             </div>
           ) : !result ? (
-            <button 
-              onClick={handleScan}
-              className="relative z-10 w-20 h-20 rounded-full bg-white/20 backdrop-blur-md border-2 border-white flex items-center justify-center text-white active:scale-90 transition-transform"
-            >
-              <Camera size={32} />
-            </button>
+            <div className="flex flex-col gap-4">
+              <button 
+                onClick={handleScan}
+                className="relative z-10 w-20 h-20 rounded-full bg-white/20 backdrop-blur-md border-2 border-white flex items-center justify-center text-white active:scale-90 transition-transform"
+              >
+                <Camera size={32} />
+              </button>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                accept="image/*" 
+                className="hidden" 
+              />
+            </div>
           ) : null}
 
-          {/* Corners */}
           <div className="absolute top-10 left-10 w-12 h-12 border-t-4 border-l-4 border-white/80 rounded-tl-2xl"></div>
           <div className="absolute top-10 right-10 w-12 h-12 border-t-4 border-r-4 border-white/80 rounded-tr-2xl"></div>
           <div className="absolute bottom-10 left-10 w-12 h-12 border-b-4 border-l-4 border-white/80 rounded-bl-2xl"></div>
           <div className="absolute bottom-10 right-10 w-12 h-12 border-b-4 border-r-4 border-white/80 rounded-br-2xl"></div>
         </div>
 
-        {/* Results */}
+        {error && (
+          <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-sm font-bold flex items-center gap-3">
+            <Info size={20} />
+            {error}
+          </div>
+        )}
+
         {result && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center justify-between">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserProfile, Meal, Screen } from '../types';
+import { UserProfile, Meal, Screen } from '../models/types';
 import { Calendar, History as HistoryIcon, Award } from 'lucide-react';
 
 interface HistoryProps {
@@ -8,10 +8,9 @@ interface HistoryProps {
   onNavigate: (screen: Screen, meal?: Meal) => void;
 }
 
-export default function History({ user, meals, onNavigate }: HistoryProps) {
+export default function HistoryView({ user, meals, onNavigate }: HistoryProps) {
   const dailyAverages = meals.length > 0 ? Math.round(meals.reduce((acc, m) => acc + m.protein, 0) / 7) : 0;
 
-  // Group meals by day
   const groupedMeals = meals.reduce((acc: any, meal) => {
     const date = meal.timestamp?.toDate ? meal.timestamp.toDate() : new Date(meal.timestamp);
     const dateString = date.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -34,7 +33,6 @@ export default function History({ user, meals, onNavigate }: HistoryProps) {
         </div>
       </header>
 
-      {/* Weekly Chart Placeholder */}
       <div className="bg-white rounded-3xl p-8 mb-10 border border-slate-100 shadow-sm">
         <div className="flex items-end justify-between h-40 gap-3">
           {['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM'].map((day, i) => (
@@ -49,7 +47,6 @@ export default function History({ user, meals, onNavigate }: HistoryProps) {
         </div>
       </div>
 
-      {/* Daily Logs */}
       <div className="space-y-8">
         {Object.entries(groupedMeals).map(([date, data]: any) => (
           <div key={date} className="space-y-4">
@@ -83,7 +80,6 @@ export default function History({ user, meals, onNavigate }: HistoryProps) {
         ))}
       </div>
 
-      {/* Badge Section */}
       <section className="mt-12">
         <div className="relative overflow-hidden bg-slate-900 rounded-3xl p-8 text-white aspect-[16/10] flex flex-col justify-end shadow-xl shadow-slate-200">
           <img 

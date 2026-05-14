@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserProfile, Meal, Screen } from '../types';
+import { UserProfile, Meal, Screen } from '../models/types';
 import { Plus, ChevronRight } from 'lucide-react';
 
 interface DashboardProps {
@@ -8,7 +8,7 @@ interface DashboardProps {
   onNavigate: (screen: Screen, meal?: Meal) => void;
 }
 
-export default function Dashboard({ user, meals, onNavigate }: DashboardProps) {
+export default function DashboardView({ user, meals, onNavigate }: DashboardProps) {
   const today = new Date().setHours(0, 0, 0, 0);
   const todaysMeals = meals.filter(m => {
     const mealDate = m.timestamp?.toDate ? m.timestamp.toDate() : new Date(m.timestamp);
@@ -21,7 +21,6 @@ export default function Dashboard({ user, meals, onNavigate }: DashboardProps) {
 
   return (
     <div className="px-6">
-      {/* Hero Section */}
       <section className="mb-12 flex flex-col items-center py-8">
         <div className="relative w-64 h-64 flex items-center justify-center">
           <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
@@ -51,7 +50,6 @@ export default function Dashboard({ user, meals, onNavigate }: DashboardProps) {
         </div>
       </section>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4 mb-10">
         <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-2">Restante</span>
@@ -77,7 +75,6 @@ export default function Dashboard({ user, meals, onNavigate }: DashboardProps) {
         </div>
       </div>
 
-      {/* Recent Meals */}
       <section className="mb-8">
         <div className="flex justify-between items-end mb-6">
           <h2 className="text-xl font-black tracking-tighter text-slate-900">Refeições Recentes</h2>
@@ -126,10 +123,9 @@ export default function Dashboard({ user, meals, onNavigate }: DashboardProps) {
         </div>
       </section>
 
-      {/* FAB */}
       <button 
         onClick={() => onNavigate('add-meal')}
-        className="fixed bottom-28 right-6 w-16 h-16 rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-200 flex items-center justify-center active:scale-90 transition-transform z-50"
+        className="fixed bottom-28 right-6 w-16 h-16 rounded-2xl bg-indigo-600 text-white shadow-xl shadow-indigo-100 flex items-center justify-center active:scale-90 transition-transform z-50"
       >
         <Plus size={32} />
       </button>
