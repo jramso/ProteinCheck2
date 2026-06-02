@@ -12,16 +12,27 @@ import { useAuth } from './hooks/useAuth';
 import { useMeals } from './hooks/useMeals';
 
 export default function App() {
-  const { user, loading, loginAsGuest } = useAuth();
+  const { user, loading, loginAsGuest, logout } = useAuth();
   const { meals } = useMeals(user?.uid);
   const [currentScreen, setCurrentScreen] = useState<Screen>('dashboard');
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const handleLogin = async () => {
+    setLoginLoading(true);
+    setLoginError(null);
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login Error:", error);
+      if (error.code === 'auth/popup-blocked') {
+        setLoginError("O popup foi bloqueado pelo navegador.");
+      } else {
+        setLoginError("Erro ao tentar entrar. Tente novamente.");
+      }
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -43,12 +54,25 @@ export default function App() {
         <p className="text-slate-500 mb-12 max-w-xs">Acompanhe sua ingestão de proteína diária com facilidade e precisão.</p>
         
         <div className="w-full max-w-xs space-y-4">
+          {loginError && (
+            <div className="bg-rose-50 text-rose-600 p-4 rounded-2xl text-sm font-bold border border-rose-100 animate-in fade-in slide-in-from-top-2">
+              {loginError}
+            </div>
+          )}
+          
           <button
             onClick={handleLogin}
-            className="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-3"
+            disabled={loginLoading}
+            className="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70"
           >
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
-            Entrar com Google
+            {loginLoading ? (
+              <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            ) : (
+              <>
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-6 h-6" alt="Google" />
+                Entrar com Google
+              </>
+            )}
           </button>
 
           <button
@@ -82,7 +106,7 @@ export default function App() {
           setCurrentScreen(s);
         }} />;
       case 'profile':
-        return <ProfileView user={user} onNavigate={setCurrentScreen} />;
+        return <ProfileView user={user} onNavigate={setCurrentScreen} logout={logout} />;
       case 'scan':
         return <ScanMealView user={user} onNavigate={setCurrentScreen} />;
       default:
@@ -91,7 +115,6 @@ export default function App() {
   };
 
   const getTransition = () => {
-    // Simplified logic: specific transitions for specific flows
     if (currentScreen === 'add-meal') return { initial: { y: '100%' }, animate: { y: 0 }, exit: { y: '100%' } };
     return { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
   };

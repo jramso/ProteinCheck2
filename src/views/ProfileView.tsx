@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { UserProfile, Screen } from '../models/types';
 import { Edit2, LogOut, Shield, Weight, ChevronRight, CheckCircle } from 'lucide-react';
-import { auth, signOut, db, doc, updateDoc } from '../services/firebaseService';
+import { db, doc, updateDoc } from '../services/firebaseService';
 
 interface ProfileProps {
   user: UserProfile;
   onNavigate: (screen: Screen) => void;
+  logout: () => void;
 }
 
-export default function ProfileView({ user, onNavigate }: ProfileProps) {
+export default function ProfileView({ user, onNavigate, logout }: ProfileProps) {
   const [weight, setWeight] = useState(user.weight);
   const [height, setHeight] = useState(user.height || 170);
   const [goal, setGoal] = useState(user.proteinGoal);
@@ -19,6 +20,14 @@ export default function ProfileView({ user, onNavigate }: ProfileProps) {
 
   const handleUpdate = async (e?: React.FormEvent, updatedFields?: Partial<UserProfile>) => {
     if (e) e.preventDefault();
+    
+    if (user.uid.startsWith('guest-')) {
+      // Para visitantes, apenas simulamos o sucesso no estado local
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+      return;
+    }
+
     setLoading(true);
     setSuccess(false);
     try {
@@ -44,7 +53,6 @@ export default function ProfileView({ user, onNavigate }: ProfileProps) {
     const newUnit = weightUnit === 'kg' ? 'lb' : 'kg';
     setWeightUnit(newUnit);
     
-    // Convert weight for display immediately
     let newWeight = weight;
     if (newUnit === 'lb') {
       newWeight = Math.round(weight * 2.20462 * 10) / 10;
@@ -57,7 +65,7 @@ export default function ProfileView({ user, onNavigate }: ProfileProps) {
   };
 
   const handleSignOut = () => {
-    signOut(auth);
+    logout();
   };
 
   const calculateBMI = () => {
@@ -104,7 +112,9 @@ export default function ProfileView({ user, onNavigate }: ProfileProps) {
           </div>
           <div>
             <h1 className="text-3xl font-black tracking-tighter text-slate-900">{user.displayName}</h1>
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-1">Plano Atleta Pro</p>
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-1">
+              {user.uid.startsWith('guest-') ? 'Sessão de Visitante' : 'Plano Atleta Pro'}
+            </p>
           </div>
         </div>
       </header>

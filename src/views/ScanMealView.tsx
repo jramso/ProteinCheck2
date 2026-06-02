@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { UserProfile, Screen } from '../models/types';
-import { ArrowLeft, Camera, Loader2, CheckCircle, Info } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, Info } from 'lucide-react';
 import { db, collection, addDoc, serverTimestamp } from '../services/firebaseService';
 import { fatSecretService } from '../services/fatsecretService';
 import { GoogleGenAI } from "@google/genai";
+import { extractProteinFromDescription } from '../utils/mealParsers';
+import { Button } from '../components/common/Button';
 
 interface ScanMealProps {
   user: UserProfile;
@@ -56,10 +58,9 @@ export default function ScanMealView({ user, onNavigate }: ScanMealProps) {
         const searchResults = await fatSecretService.search(foodName);
         if (searchResults.length > 0) {
           const food = searchResults[0];
-          const proteinMatch = food.food_description.match(/Protein: ([\d.]+)g/);
           setResult({
             name: food.food_name,
-            protein: proteinMatch ? Math.round(parseFloat(proteinMatch[1])) : 0
+            protein: extractProteinFromDescription(food.food_description)
           });
           setScanning(false);
           return;
@@ -101,10 +102,6 @@ export default function ScanMealView({ user, onNavigate }: ScanMealProps) {
     reader.readAsDataURL(file);
   };
 
-  const handleScan = () => {
-    fileInputRef.current?.click();
-  };
-
   const handleConfirm = async () => {
     if (!result) return;
     setLoading(true);
@@ -125,12 +122,9 @@ export default function ScanMealView({ user, onNavigate }: ScanMealProps) {
   return (
     <div className="px-6 pb-12">
       <header className="flex items-center justify-between mb-8 pt-4">
-        <button 
-          onClick={() => onNavigate('dashboard')}
-          className="p-2 -ml-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
-        >
+        <Button variant="ghost" size="sm" onClick={() => onNavigate('dashboard')} className="-ml-2">
           <ArrowLeft size={24} />
-        </button>
+        </Button>
         <h1 className="text-xl font-black tracking-tighter text-slate-900">Scan de Refeição</h1>
         <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100">
           <img src={user.photoURL || ''} alt="User" className="w-full h-full object-cover" />
@@ -157,7 +151,7 @@ export default function ScanMealView({ user, onNavigate }: ScanMealProps) {
           ) : !result ? (
             <div className="flex flex-col gap-4">
               <button 
-                onClick={handleScan}
+                onClick={() => fileInputRef.current?.click()}
                 className="relative z-10 w-20 h-20 rounded-full bg-white/20 backdrop-blur-md border-2 border-white flex items-center justify-center text-white active:scale-90 transition-transform"
               >
                 <Camera size={32} />
@@ -195,7 +189,7 @@ export default function ScanMealView({ user, onNavigate }: ScanMealProps) {
             <div className="bg-white p-5 rounded-3xl flex items-center justify-between border border-slate-100 shadow-sm">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                  <CheckCircle size={24} />
+                  <Loader2 size={24} className="animate-pulse" />
                 </div>
                 <div>
                   <p className="font-bold text-slate-900">{result.name}</p>
@@ -208,13 +202,14 @@ export default function ScanMealView({ user, onNavigate }: ScanMealProps) {
             </div>
 
             <div className="pt-4 space-y-4">
-              <button 
+              <Button 
+                fullWidth 
+                size="xl" 
                 onClick={handleConfirm}
-                disabled={loading}
-                className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black tracking-tight text-lg shadow-xl shadow-indigo-100 active:scale-95 transition-all flex items-center justify-center gap-3"
+                loading={loading}
               >
-                {loading ? 'Salvando...' : 'Confirmar e Salvar'}
-              </button>
+                Confirmar e Salvar
+              </Button>
               <p className="text-center text-slate-400 text-sm font-medium">
                 Algo errado? <button onClick={() => setResult(null)} className="text-indigo-600 font-bold hover:underline">Ajustar manualmente</button>
               </p>

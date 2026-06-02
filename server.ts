@@ -63,7 +63,9 @@ async function startServer() {
           method: "foods.search",
           search_expression: q,
           format: "json",
-          max_results: 10
+          max_results: 10,
+          region: "BR",
+          language: "pt"
         },
         headers: {
           Authorization: `Bearer ${token}`
@@ -85,7 +87,9 @@ async function startServer() {
         params: {
           method: "foods.autocomplete",
           expression: q,
-          format: "json"
+          format: "json",
+          region: "BR",
+          language: "pt"
         },
         headers: {
           Authorization: `Bearer ${token}`

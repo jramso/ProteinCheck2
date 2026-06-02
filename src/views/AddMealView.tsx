@@ -1,8 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, Screen, Meal } from '../models/types';
-import { ArrowLeft, CheckCircle, Bolt, Utensils, Egg, Dumbbell, Apple, Trash2, Search, Loader2 } from 'lucide-react';
-import { db, collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc } from '../services/firebaseService';
-import { fatSecretService, FatSecretFood } from '../services/fatsecretService';
+import { ArrowLeft, CheckCircle, Bolt, Trash2, Search, Loader2 } from 'lucide-react';
+import { FatSecretFood } from '../services/fatsecretService';
+import { QUICK_FOODS } from '../constants/meals';
+import { extractProteinFromDescription } from '../utils/mealParsers';
+import { useFoodSearch } from '../hooks/useFoodSearch';
+import { useAddMealForm } from '../hooks/useAddMealForm';
+import { Button } from '../components/common/Button';
+import { Input } from '../components/common/Input';
 
 interface AddMealProps {
   user: UserProfile;
@@ -10,24 +15,22 @@ interface AddMealProps {
   onNavigate: (screen: Screen) => void;
 }
 
-const QUICK_FOODS = [
-  { name: 'Whey Protein', protein: 25, icon: <Dumbbell size={20} /> },
-  { name: 'Ovo (Unidade)', protein: 6, icon: <Egg size={20} /> },
-  { name: 'Peito de Frango', protein: 31, icon: <Utensils size={20} /> },
-  { name: 'Iogurte Grego', protein: 10, icon: <Apple size={20} /> },
-];
-
 export default function AddMealView({ user, meal, onNavigate }: AddMealProps) {
-  const [name, setName] = useState(meal?.name || '');
-  const [protein, setProtein] = useState<number>(meal?.protein || 0);
-  const [loading, setLoading] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<FatSecretFood[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  const {
+    name, setName,
+    protein, setProtein,
+    isLoading,
+    handleSave,
+    handleDelete,
+    setQuickFood
+  } = useAddMealForm(user, meal, onNavigate);
+
+  const {
+    query, results, isSearching, showResults, setShowResults, search, clearSearch
+  } = useFoodSearch();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -37,121 +40,57 @@ export default function AddMealView({ user, meal, onNavigate }: AddMealProps) {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSearch = async (query: string) => {
-    setSearchQuery(query);
-    if (query.length < 3) {
-      setSearchResults([]);
-      setShowResults(false);
-      return;
-    }
-
-    setSearching(true);
-    setShowResults(true);
-    const results = await fatSecretService.search(query);
-    setSearchResults(results);
-    setSearching(false);
-  };
+  }, [setShowResults]);
 
   const selectFood = (food: FatSecretFood) => {
     setName(food.food_name);
-    const proteinMatch = food.food_description.match(/Protein: ([\d.]+)g/);
-    if (proteinMatch) {
-      setProtein(Math.round(parseFloat(proteinMatch[1])));
-    }
+    const p = extractProteinFromDescription(food.food_description);
+    if (p > 0) setProtein(p);
     setShowResults(false);
-    setSearchQuery('');
-  };
-
-  useEffect(() => {
-    if (meal) {
-      setName(meal.name);
-      setProtein(meal.protein);
-    }
-  }, [meal]);
-
-  const handleSave = async () => {
-    if (!name || protein <= 0) return;
-    setLoading(true);
-    try {
-      if (meal?.id) {
-        await updateDoc(doc(db, 'users', user.uid, 'meals', meal.id), {
-          name,
-          protein,
-        });
-      } else {
-        await addDoc(collection(db, 'users', user.uid, 'meals'), {
-          name,
-          protein,
-          timestamp: serverTimestamp(),
-        });
-      }
-      onNavigate('dashboard');
-    } catch (error) {
-      console.error("Error saving meal:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!meal?.id) return;
-    
-    setLoading(true);
-    try {
-      await deleteDoc(doc(db, 'users', user.uid, 'meals', meal.id));
-      onNavigate('dashboard');
-    } catch (error) {
-      console.error("Error deleting meal:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addQuickFood = (food: typeof QUICK_FOODS[0]) => {
-    setName(food.name);
-    setProtein(food.protein);
+    clearSearch();
   };
 
   return (
     <div className="px-6 pb-12">
       <header className="flex items-center gap-4 mb-8">
-        <button 
+        <Button 
+          variant="ghost" 
+          size="sm" 
           onClick={() => onNavigate('dashboard')}
-          className="p-2 -ml-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+          className="-ml-2"
         >
           <ArrowLeft size={24} />
-        </button>
+        </Button>
         <h1 className="text-2xl font-black tracking-tighter text-slate-900">
           {meal ? 'Editar Refeição' : 'Adicionar Refeição'}
         </h1>
       </header>
 
       <div className="space-y-8 max-w-md mx-auto">
-        <section className="space-y-2 relative" ref={searchRef}>
-          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Buscar na Base FatSecret</label>
-          <div className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Pesquisar alimento..."
-              className="w-full bg-white border border-slate-100 rounded-2xl pl-12 pr-5 py-4 text-slate-900 placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 outline-none transition-all font-bold"
-            />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
-            {searching && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-indigo-600 animate-spin" size={20} />}
-          </div>
+        {/* Busca FatSecret */}
+        <section className="relative" ref={searchRef}>
+          <Input
+            label="Buscar na Base FatSecret"
+            placeholder="Pesquisar alimento..."
+            value={query}
+            onChange={(e) => search(e.target.value)}
+            icon={<Search size={20} />}
+          />
+          {isSearching && (
+            <div className="absolute right-4 top-[42px] text-indigo-600 animate-spin">
+              <Loader2 size={20} />
+            </div>
+          )}
 
-          {showResults && (searchResults.length > 0 || searching) && (
+          {showResults && (results.length > 0 || isSearching) && (
             <div className="absolute z-50 w-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 max-h-64 overflow-y-auto overflow-x-hidden">
-              {searching ? (
+              {isSearching ? (
                 <div className="p-8 flex flex-col items-center gap-2">
                   <Loader2 className="text-indigo-600 animate-spin" size={24} />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Buscando...</span>
                 </div>
               ) : (
-                searchResults.map((food) => (
+                results.map((food) => (
                   <button
                     key={food.food_id}
                     onClick={() => selectFood(food)}
@@ -166,17 +105,15 @@ export default function AddMealView({ user, meal, onNavigate }: AddMealProps) {
           )}
         </section>
 
-        <section className="space-y-2">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Nome da Refeição</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ex: Almoço, Pós-treino"
-            className="w-full bg-white border border-slate-100 rounded-2xl px-5 py-4 text-slate-900 placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-100 focus:border-indigo-600 outline-none transition-all font-bold"
-          />
-        </section>
+        {/* Nome da Refeição */}
+        <Input
+          label="Nome da Refeição"
+          placeholder="Ex: Almoço, Pós-treino"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
 
+        {/* Valor de Proteína */}
         <section className="space-y-4">
           <div className="flex justify-between items-end">
             <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Proteína (g)</label>
@@ -194,6 +131,7 @@ export default function AddMealView({ user, meal, onNavigate }: AddMealProps) {
           </div>
         </section>
 
+        {/* Alimentos Rápidos */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <Bolt className="text-indigo-600" size={20} />
@@ -203,7 +141,7 @@ export default function AddMealView({ user, meal, onNavigate }: AddMealProps) {
             {QUICK_FOODS.map((food) => (
               <button
                 key={food.name}
-                onClick={() => addQuickFood(food)}
+                onClick={() => setQuickFood(food)}
                 className="flex flex-col items-start p-4 bg-white rounded-2xl text-left border border-slate-100 hover:border-indigo-200 hover:bg-indigo-50/30 transition-all active:scale-95"
               >
                 <div className="text-indigo-600 mb-3">{food.icon}</div>
@@ -214,62 +152,65 @@ export default function AddMealView({ user, meal, onNavigate }: AddMealProps) {
           </div>
         </section>
 
-        <section className="pt-4">
-          <button 
+        {/* Ações */}
+        <div className="pt-4 space-y-3">
+          <Button 
+            fullWidth 
+            variant="secondary" 
+            size="lg" 
             onClick={() => onNavigate('scan')}
-            className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-3"
+            icon={<Bolt size={20} />}
           >
-            <Bolt size={20} />
             Escanear com IA
-          </button>
-        </section>
+          </Button>
 
-        <section className="pt-2 space-y-3">
-          <button
+          <Button
+            fullWidth
+            size="xl"
             onClick={handleSave}
-            disabled={loading || !name || protein <= 0}
-            className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl active:scale-95 transition-all shadow-xl shadow-indigo-100 flex items-center justify-center gap-3 disabled:opacity-50 disabled:active:scale-100"
+            loading={isLoading}
+            disabled={!name || protein <= 0}
+            icon={!isLoading ? <CheckCircle size={20} /> : undefined}
           >
-            {loading ? 'Salvando...' : (
-              <>
-                <span>{meal ? 'Atualizar Refeição' : 'Salvar Refeição'}</span>
-                <CheckCircle size={20} />
-              </>
-            )}
-          </button>
+            {meal ? 'Atualizar Refeição' : 'Salvar Refeição'}
+          </Button>
 
           {meal && (
             <div className="space-y-2">
               {!showConfirmDelete ? (
-                <button
+                <Button
+                  fullWidth
+                  variant="danger"
+                  size="lg"
                   onClick={() => setShowConfirmDelete(true)}
-                  disabled={loading}
-                  className="w-full py-4 bg-rose-50 text-rose-600 font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  disabled={isLoading}
+                  icon={<Trash2 size={20} />}
                 >
-                  <Trash2 size={20} />
                   Remover Refeição
-                </button>
+                </Button>
               ) : (
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    className="flex-1 bg-rose-600 text-white"
+                    size="lg"
                     onClick={handleDelete}
-                    disabled={loading}
-                    className="flex-1 py-4 bg-rose-600 text-white font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                    loading={isLoading}
                   >
-                    Confirmar Exclusão
-                  </button>
-                  <button
+                    Confirmar
+                  </Button>
+                  <Button
+                    className="flex-1 bg-slate-100 text-slate-600"
+                    size="lg"
                     onClick={() => setShowConfirmDelete(false)}
-                    disabled={loading}
-                    className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                    disabled={isLoading}
                   >
                     Cancelar
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
           )}
-        </section>
+        </div>
       </div>
     </div>
   );

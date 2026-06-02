@@ -9,7 +9,7 @@ export interface UserProfile {
   multiplier: number;
   autoCalculate: boolean;
   weightUnit?: 'kg' | 'lb';
-  createdAt: string;
+  createdAt: any;
 }
 
 export interface Meal {

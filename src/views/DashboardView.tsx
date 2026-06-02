@@ -1,6 +1,8 @@
 import React from 'react';
 import { UserProfile, Meal, Screen } from '../models/types';
-import { Plus, ChevronRight } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { MealCard } from '../components/common/MealCard';
+import { Button } from '../components/common/Button';
 
 interface DashboardProps {
   user: UserProfile;
@@ -88,32 +90,11 @@ export default function DashboardView({ user, meals, onNavigate }: DashboardProp
         <div className="space-y-4">
           {todaysMeals.length > 0 ? (
             todaysMeals.slice(0, 3).map((meal) => (
-              <button 
+              <MealCard 
                 key={meal.id} 
-                onClick={() => onNavigate('add-meal', meal)}
-                className="w-full group bg-white hover:bg-slate-50 transition-all p-4 rounded-3xl flex items-center gap-4 border border-slate-100 shadow-sm text-left"
-              >
-                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
-                  <img 
-                    className="w-full h-full object-cover" 
-                    src={meal.imageUrl || `https://picsum.photos/seed/${meal.name}/200/200`} 
-                    alt={meal.name}
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-slate-900">{meal.name}</h3>
-                      <p className="text-xs text-slate-400 font-medium">
-                        {meal.timestamp?.toDate ? meal.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
-                      </p>
-                    </div>
-                    <span className="text-sm font-black text-indigo-600">+{meal.protein}g</span>
-                  </div>
-                </div>
-                <ChevronRight className="text-slate-200" size={20} />
-              </button>
+                meal={meal} 
+                onClick={() => onNavigate('add-meal', meal)} 
+              />
             ))
           ) : (
             <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200">

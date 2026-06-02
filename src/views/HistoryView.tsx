@@ -1,6 +1,7 @@
 import React from 'react';
 import { UserProfile, Meal, Screen } from '../models/types';
-import { Calendar, History as HistoryIcon, Award } from 'lucide-react';
+import { Award } from 'lucide-react';
+import { MealCard } from '../components/common/MealCard';
 
 interface HistoryProps {
   user: UserProfile;
@@ -56,24 +57,11 @@ export default function HistoryView({ user, meals, onNavigate }: HistoryProps) {
             </div>
             <div className="space-y-2">
               {data.meals.map((meal: Meal) => (
-                <button 
+                <MealCard 
                   key={meal.id} 
-                  onClick={() => onNavigate('add-meal', meal)}
-                  className="w-full bg-white rounded-2xl p-4 flex items-center justify-between border border-slate-100 shadow-sm hover:bg-slate-50 transition-all text-left"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                      <HistoryIcon size={20} />
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-900 text-sm">{meal.name}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                        {meal.timestamp?.toDate ? meal.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="font-black text-indigo-600">+{meal.protein}g</p>
-                </button>
+                  meal={meal} 
+                  onClick={() => onNavigate('add-meal', meal)} 
+                />
               ))}
             </div>
           </div>

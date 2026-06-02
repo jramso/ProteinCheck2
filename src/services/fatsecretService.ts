@@ -12,7 +12,9 @@ export const fatSecretService = {
   async search(query: string): Promise<FatSecretFood[]> {
     try {
       const response = await axios.get(`/api/food/search?q=${encodeURIComponent(query)}`);
-      return response.data?.foods?.food || [];
+      const food = response.data?.foods?.food;
+      if (!food) return [];
+      return Array.isArray(food) ? food : [food];
     } catch (error) {
       console.error('FatSecret Search Error:', error);
       return [];
@@ -22,7 +24,9 @@ export const fatSecretService = {
   async autocomplete(query: string): Promise<string[]> {
     try {
       const response = await axios.get(`/api/food/autocomplete?q=${encodeURIComponent(query)}`);
-      return response.data?.suggestions?.suggestion || [];
+      const suggestions = response.data?.suggestions?.suggestion;
+      if (!suggestions) return [];
+      return Array.isArray(suggestions) ? suggestions : [suggestions];
     } catch (error) {
       console.error('FatSecret Autocomplete Error:', error);
       return [];
