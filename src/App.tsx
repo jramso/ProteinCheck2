@@ -27,9 +27,13 @@ export default function App() {
     } catch (error: any) {
       console.error("Login Error:", error);
       if (error.code === 'auth/popup-blocked') {
-        setLoginError("O popup foi bloqueado pelo navegador.");
+        setLoginError("O popup foi bloqueado pelo navegador. Por favor, permita popups para este site.");
+      } else if (error.code === 'auth/unauthorized-domain') {
+        setLoginError("Este domínio não está autorizado para login. Use o modo Visitante.");
+      } else if (error.code === 'auth/network-request-failed') {
+        setLoginError("Erro de conexão. Verifique sua internet.");
       } else {
-        setLoginError("Erro ao tentar entrar. Tente novamente.");
+        setLoginError(`Erro (${error.code || 'desconhecido'}): ${error.message || 'Tente novamente.'}`);
       }
     } finally {
       setLoginLoading(false);

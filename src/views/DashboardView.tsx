@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { UserProfile, Meal, Screen } from '../models/types';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { MealCard } from '../components/common/MealCard';
 import { Button } from '../components/common/Button';
+import { getTimeBasedSuggestion } from '../utils/suggestionEngine';
 
 interface DashboardProps {
   user: UserProfile;
@@ -20,6 +21,8 @@ export default function DashboardView({ user, meals, onNavigate }: DashboardProp
   const totalProtein = todaysMeals.reduce((acc, m) => acc + m.protein, 0);
   const remaining = Math.max(0, user.proteinGoal - totalProtein);
   const progress = Math.min(100, (totalProtein / user.proteinGoal) * 100);
+
+  const suggestion = useMemo(() => getTimeBasedSuggestion(), []);
 
   return (
     <div className="px-6">
@@ -76,6 +79,34 @@ export default function DashboardView({ user, meals, onNavigate }: DashboardProp
           </div>
         </div>
       </div>
+
+      {/* Sugestão Baseada em Horário */}
+      <section className="mb-10">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="text-amber-500" size={20} />
+          <h2 className="text-xl font-black tracking-tighter text-slate-900">Sugestão para agora</h2>
+        </div>
+        <button 
+          onClick={() => onNavigate('add-meal', { 
+            name: suggestion.food.food_name, 
+            protein: suggestion.food.protein,
+            timestamp: null
+          })}
+          className="w-full bg-gradient-to-br from-indigo-600 to-indigo-700 p-6 rounded-[2rem] text-white text-left shadow-xl shadow-indigo-100 relative overflow-hidden active:scale-[0.98] transition-all"
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Sparkles size={120} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-200 block mb-1">
+            {suggestion.period}
+          </span>
+          <h3 className="text-2xl font-black leading-tight mb-2 pr-12">{suggestion.food.food_name}</h3>
+          <div className="flex items-center gap-3">
+            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold">+{suggestion.food.protein}g Proteína</span>
+            <span className="text-xs text-indigo-100 font-medium opacity-80">Toque para adicionar</span>
+          </div>
+        </button>
+      </section>
 
       <section className="mb-8">
         <div className="flex justify-between items-end mb-6">
