@@ -1,7 +1,3 @@
-Aqui está uma proposta de reescrita completa para o arquivo `README.md` do seu projeto. O texto foi reformulado para refletir com precisão todas as funcionalidades reais mapeadas no código do sistema (como rastreamento de proteínas, integração com a API do FatSecret para busca/autocompletar, escaneamento de refeições usando a IA do Gemini e persistência com Firebase/Modo Visitante).
-
----
-
 # Proteína Check-in
 
 O **Proteína Check-in** é uma aplicação web voltada para o monitoramento personalizado da ingestão diária de proteínas, ajudando entusiastas de atividades físicas e atletas a atingirem suas metas nutricionais com facilidade e precisão.
