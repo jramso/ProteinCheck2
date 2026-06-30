@@ -2,4 +2,5 @@
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
 [plan.md](specs/006-sugestoes-consumo/plan.md)
+[plan.md](specs\007-atualizacao-grafico-semanal/plan.md)
 <!-- SPECKIT END -->
