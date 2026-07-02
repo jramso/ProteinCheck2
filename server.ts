@@ -102,6 +102,125 @@ async function startServer() {
     }
   });
 
+  function getLocalFallbackUrl(term: string): string {
+    const t = term.toLowerCase();
+    if (t.includes("ovo") || t.includes("egg") || t.includes("omelete") || t.includes("clara")) {
+      return "https://images.pexels.com/photos/162712/egg-yellow-food-one-162712.jpeg?auto=compress&cs=tinysrgb&h=350";
+    }
+    if (t.includes("carne") || t.includes("frango") || t.includes("bife") || t.includes("meat") || t.includes("chicken") || t.includes("porco") || t.includes("peixe") || t.includes("fish")) {
+      return "https://images.pexels.com/photos/262959/pexels-photo-262959.jpeg?auto=compress&cs=tinysrgb&h=350";
+    }
+    if (t.includes("whey") || t.includes("shake") || t.includes("leite") || t.includes("suco") || t.includes("vitamina") || t.includes("juice") || t.includes("milk") || t.includes("bebida")) {
+      return "https://images.pexels.com/photos/103566/pexels-photo-103566.jpeg?auto=compress&cs=tinysrgb&h=350";
+    }
+    if (t.includes("salada") || t.includes("alface") || t.includes("tomate") || t.includes("vegetal") || t.includes("legume") || t.includes("salad") || t.includes("folha")) {
+      return "https://images.pexels.com/photos/406152/pexels-photo-406152.jpeg?auto=compress&cs=tinysrgb&h=350";
+    }
+    return "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&h=350";
+  }
+
+  app.get("/api/images/search", async (req, res) => {
+    try {
+      const { q } = req.query;
+      const apiKey = process.env.PEXELS_API_KEY;
+
+      if (!apiKey) {
+        return res.status(200).json({
+          success: false,
+          imageUrl: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&h=350",
+          reason: "API_KEY_NOT_CONFIGURED"
+        });
+      }
+
+      if (!q || typeof q !== 'string') {
+        return res.status(200).json({
+          success: false,
+          imageUrl: "https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&h=350",
+          reason: "EMPTY_QUERY"
+        });
+      }
+
+      const cleaned = q
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // remove acentos
+        .replace(/\b(com|de|e|para|da|do|em|um|uma|dois|tres|comida|alimento)\b/gi, "")
+        .trim();
+
+      const searchTerms = `${cleaned} food`.trim();
+
+      try {
+        const response = await axios.get("https://api.pexels.com/v1/search", {
+          params: {
+            query: searchTerms,
+            per_page: 5,
+            orientation: "square"
+          },
+          headers: {
+            Authorization: apiKey
+          }
+        });
+
+        const photos = response.data.photos;
+        if (photos && photos.length > 0) {
+          const imageUrl = photos[0].src.medium || photos[0].src.large || photos[0].src.original;
+          return res.json({
+            success: true,
+            query: q,
+            imageUrl
+          });
+        }
+
+        const firstWord = cleaned.split(/\s+/)[0];
+        if (firstWord && firstWord !== cleaned) {
+          const fallbackResponse = await axios.get("https://api.pexels.com/v1/search", {
+            params: {
+              query: `${firstWord} food`,
+              per_page: 3,
+              orientation: "square"
+            },
+            headers: {
+              Authorization: apiKey
+            }
+          });
+
+          const fallbackPhotos = fallbackResponse.data.photos;
+          if (fallbackPhotos && fallbackPhotos.length > 0) {
+            const imageUrl = fallbackPhotos[0].src.medium || fallbackPhotos[0].src.large || fallbackPhotos[0].src.original;
+            return res.json({
+              success: true,
+              query: q,
+              imageUrl
+            });
+          }
+        }
+
+        const localFallback = getLocalFallbackUrl(cleaned);
+        return res.json({
+          success: false,
+          query: q,
+          imageUrl: localFallback,
+          reason: "NO_RESULTS"
+        });
+
+      } catch (apiError: any) {
+        console.error("Pexels API Direct Error:", apiError.response?.data || apiError.message);
+        const localFallback = getLocalFallbackUrl(cleaned);
+        return res.json({
+          success: false,
+          query: q,
+          imageUrl: localFallback,
+          reason: "API_ERROR",
+          message: apiError.message
+        });
+      }
+
+    } catch (error: any) {
+      console.error("Image Search Controller Error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/food/recognize", async (req, res) => {
     try {
       const { image } = req.body; // base64 image

@@ -23,10 +23,12 @@ export default function AddMealView({ user, meal, onNavigate }: AddMealProps) {
   const {
     name, setName,
     protein, setProtein,
+    imageUrl,
     isLoading,
     handleSave,
     handleDelete,
     setQuickFood,
+
 
     // Suggestion variables & functions
     sugName, setSugName,
@@ -224,6 +226,21 @@ export default function AddMealView({ user, meal, onNavigate }: AddMealProps) {
             </div>
           )}
         </section>
+
+        {/* Prévia da Imagem do Alimento */}
+        <div className="w-full h-44 rounded-[2rem] overflow-hidden bg-slate-100 border border-slate-100/50 relative shadow-sm">
+          <img 
+            className="w-full h-full object-cover transition-all duration-700 ease-out" 
+            src={imageUrl || `https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&h=350`} 
+            alt={name || "Alimento"}
+            referrerPolicy="no-referrer"
+          />
+          {name && (
+            <div className="absolute bottom-4 left-4 bg-slate-900/60 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-white/10">
+              {imageUrl ? 'Imagem Pexels' : 'Fallback Culinário'}
+            </div>
+          )}
+        </div>
 
         {/* Nome da Refeição */}
         <Input

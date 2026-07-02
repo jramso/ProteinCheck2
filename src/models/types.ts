@@ -47,3 +47,11 @@ export interface SuggestionError {
 }
 
 export type Screen = 'dashboard' | 'add-meal' | 'history' | 'profile' | 'scan';
+
+export interface PexelsImageSearchResult {
+  success: boolean;
+  query: string;
+  imageUrl: string;
+  reason?: string;
+  message?: string;
+}

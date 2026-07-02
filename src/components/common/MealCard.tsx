@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Meal } from '../../models/types';
+import { getLocalFallbackUrl } from '../../utils/imageFallbacks';
 
 interface MealCardProps {
   meal: Meal;
@@ -29,7 +30,7 @@ export const MealCard: React.FC<MealCardProps> = ({ meal, onClick }) => {
       <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
         <img 
           className="w-full h-full object-cover" 
-          src={meal.imageUrl || `https://picsum.photos/seed/${meal.name}/200/200`} 
+          src={meal.imageUrl || getLocalFallbackUrl(meal.name)} 
           alt={meal.name}
           referrerPolicy="no-referrer"
         />

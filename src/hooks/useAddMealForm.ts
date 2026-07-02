@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { UserProfile, Meal, Screen, SugestaoConsumo } from '../models/types';
 import { db, collection, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, createSuggestion, updateSuggestion, deleteSuggestion } from '../services/firebaseService';
+import { searchFoodImage } from '../services/pexelsService';
+
 
 export const useAddMealForm = (user: UserProfile, initialMeal?: Meal | null, onNavigate?: (screen: Screen) => void) => {
   const [name, setName] = useState(initialMeal?.name || '');
   const [protein, setProtein] = useState<number>(initialMeal?.protein || 0);
+  const [imageUrl, setImageUrl] = useState(initialMeal?.imageUrl || '');
   const [isLoading, setIsLoading] = useState(false);
+
 
   // Suggestion specific states
   const [sugName, setSugName] = useState('');
@@ -22,8 +26,34 @@ export const useAddMealForm = (user: UserProfile, initialMeal?: Meal | null, onN
     if (initialMeal) {
       setName(initialMeal.name);
       setProtein(initialMeal.protein);
+      setImageUrl(initialMeal.imageUrl || '');
     }
   }, [initialMeal]);
+
+  useEffect(() => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setImageUrl('');
+      return;
+    }
+
+    if (initialMeal && initialMeal.name === name && initialMeal.imageUrl) {
+      setImageUrl(initialMeal.imageUrl);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const url = await searchFoodImage(trimmed);
+        setImageUrl(url);
+      } catch (error) {
+        console.error("Failed to fetch image preview:", error);
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [name, initialMeal]);
+
 
   const handleSave = async () => {
     if (!name || protein <= 0) return;
@@ -33,6 +63,7 @@ export const useAddMealForm = (user: UserProfile, initialMeal?: Meal | null, onN
         await updateDoc(doc(db, 'users', user.uid, 'meals', initialMeal.id), {
           name,
           protein,
+          imageUrl,
         });
       } else {
         await addDoc(collection(db, 'users', user.uid, 'meals'), {
@@ -41,9 +72,11 @@ export const useAddMealForm = (user: UserProfile, initialMeal?: Meal | null, onN
           timestamp: serverTimestamp(),
           quantityMultiplier: selectedSuggestion ? quantityMultiplier : 1,
           suggestionId: selectedSuggestion ? (selectedSuggestion.id || null) : null,
+          imageUrl,
         });
       }
       if (onNavigate) onNavigate('dashboard');
+
     } catch (error) {
       console.error("Error saving meal:", error);
     } finally {
@@ -169,10 +202,13 @@ export const useAddMealForm = (user: UserProfile, initialMeal?: Meal | null, onN
     setName,
     protein,
     setProtein,
+    imageUrl,
+    setImageUrl,
     isLoading,
     handleSave,
     handleDelete,
     setQuickFood,
+
 
     // Suggestion variables & functions
     sugName,
