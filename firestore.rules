@@ -67,6 +67,16 @@ service cloud.firestore {
              data.timestamp is timestamp;
     }
 
+    function isValidSuggestion(data) {
+      return data.keys().hasAll(['name', 'proteinPerPortion', 'createdAt', 'updatedAt', 'nameNormalized', 'userId']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.nameNormalized is string && data.nameNormalized.size() > 0 && data.nameNormalized.size() < 100 &&
+             data.proteinPerPortion is number && data.proteinPerPortion > 0 &&
+             data.userId == request.auth.uid &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -80,6 +90,13 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow create: if isOwner(userId) && isValidMeal(request.resource.data);
         allow update: if isOwner(userId) && isValidMeal(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /suggestions/{suggestionId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidSuggestion(request.resource.data);
+        allow update: if isOwner(userId) && isValidSuggestion(request.resource.data);
         allow delete: if isOwner(userId);
       }
     }

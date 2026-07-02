@@ -45,6 +45,14 @@ Expected outcome:
 - Edicao e exclusao de refeicao continuam funcionando.
 - Dashboard e historico continuam exibindo dados corretamente.
 
+## Scenario 5: Validar Regras de Segurança no Firestore
+1. Executar os testes locais de regras ou simular no Firebase Console / Simulator.
+2. Tentar criar uma sugestão usando um payload inválido (ex: `proteinPerPortion` <= 0).
+3. Tentar ler ou escrever sugestões de outro usuário (onde `userId` do path difere do `uid` logado).
+
+Expected outcome:
+- Gravações inválidas ou de outros usuários são rejeitadas pelo Firestore (`Permission Denied`).
+
 ## Validation Commands
 - `npm run lint`
 - `npm run build`

@@ -67,3 +67,16 @@ Erros devem retornar codigo funcional e mensagem amigavel:
 - DUPLICATE_SUGGESTION
 - NOT_FOUND
 - PERSISTENCE_ERROR
+
+## Firestore Security Rules Contract
+Toda gravação direta na subcoleção `users/{userId}/suggestions/{suggestionId}` deve passar pelas regras de validação do banco:
+- **CREATE/UPDATE**:
+  - `request.auth.uid == userId`
+  - `request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 100`
+  - `request.resource.data.nameNormalized is string && request.resource.data.nameNormalized.size() > 0 && request.resource.data.nameNormalized.size() < 100`
+  - `request.resource.data.proteinPerPortion is number && request.resource.data.proteinPerPortion > 0`
+  - `request.resource.data.userId == request.auth.uid`
+  - `request.resource.data.createdAt is timestamp`
+  - `request.resource.data.updatedAt is timestamp`
+- **READ/DELETE**:
+  - `request.auth.uid == userId`

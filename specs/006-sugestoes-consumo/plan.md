@@ -14,19 +14,19 @@ Implementar cadastro e gerenciamento de sugestoes de consumo por usuario para ac
 
 **Primary Dependencies**: React, Firebase SDK (Firestore/Auth), Vite, Express, Lucide React
 
-**Storage**: Firestore para usuarios autenticados; visitante sem persistencia de sugestoes
+**Storage**: Firestore para usuarios autenticados; visitante sem persistencia de sugestoes. Persistência offline habilitada no Firestore cliente via `persistentLocalCache` e `persistentMultipleTabManager` para garantir reatividade e acesso offline de dados de consumo e sugestões.
 
-**Testing**: Type check via `npm run lint` e validacao funcional manual dos fluxos principais
+**Testing**: Type check via `npm run lint` e validacao funcional manual dos fluxos principais.
 
 **Target Platform**: Web (SPA React em Vite)
 
 **Project Type**: Aplicacao web fullstack leve (frontend React + backend Express)
 
-**Performance Goals**: Cadastro e uso de sugestao concluiveis em poucos toques, sem regressao perceptivel no fluxo atual de adicionar refeicao
+**Performance Goals**: Cadastro e uso de sugestao concluiveis em poucos toques, sem regressao perceptivel no fluxo atual de adicionar refeicao. Proteção contra telas brancas ao cadastrar refeições localmente tratando timestamps de escrita pendente (com fallbacks de data local).
 
-**Constraints**: Nao adicionar bibliotecas novas desnecessarias; manter tipagem estrita sem `any`; preservar comportamento atual de refeicoes
+**Constraints**: Nao adicionar bibliotecas novas desnecessarias; manter tipagem estrita sem `any`; preservar comportamento atual de refeicoes. As regras de escrita do Firestore devem validar a estrutura e tipos no servidor de forma estrita.
 
-**Scale/Scope**: Funcionalidade limitada a sugestoes de consumo (CRUD + uso no registro de refeicao) para usuarios autenticados
+**Scale/Scope**: Funcionalidade limitada a sugestoes de consumo (CRUD + uso no registro de refeicao) para usuarios autenticados.
 
 ## Constitution Check
 

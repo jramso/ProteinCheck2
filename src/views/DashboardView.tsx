@@ -14,7 +14,17 @@ interface DashboardProps {
 export default function DashboardView({ user, meals, onNavigate }: DashboardProps) {
   const today = new Date().setHours(0, 0, 0, 0);
   const todaysMeals = meals.filter(m => {
-    const mealDate = m.timestamp?.toDate ? m.timestamp.toDate() : new Date(m.timestamp);
+    let mealDate: Date;
+    if (m.timestamp) {
+      if (typeof m.timestamp === 'object' && 'toDate' in m.timestamp && typeof m.timestamp.toDate === 'function') {
+        mealDate = m.timestamp.toDate();
+      } else {
+        const parsedDate = new Date(m.timestamp as any);
+        mealDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+      }
+    } else {
+      mealDate = new Date();
+    }
     return mealDate.setHours(0, 0, 0, 0) === today;
   });
 

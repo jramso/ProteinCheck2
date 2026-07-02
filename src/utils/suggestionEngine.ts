@@ -30,3 +30,21 @@ export const getTimeBasedSuggestion = (): { food: LocalFood; period: string } =>
     period: periodName
   };
 };
+
+export const normalizeName = (name: string): string => {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+export const isDuplicateSuggestion = (
+  nameA: string,
+  proteinA: number,
+  nameB: string,
+  proteinB: number
+): boolean => {
+  return normalizeName(nameA) === normalizeName(nameB) && proteinA === proteinB;
+};

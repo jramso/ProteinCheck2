@@ -16,6 +16,10 @@
 - Q: Ao usar sugestao para registrar consumo, como deve ser o fluxo? → A: Sempre perguntar quantidade em um passo extra antes de salvar.
 - Q: Como tratar persistencia de sugestoes no modo visitante? → A: Visitante deve converter para conta para salvar sugestoes.
 
+### Session 2026-07-02
+
+- Q: Como deve ser a validação das escritas para as sugestões no firestore.rules? → A: Validar o acesso do dono (isOwner) e criar uma função isValidSuggestion que checa tipos, limites e campos obrigatórios (name, proteinPerPortion, createdAt, updatedAt, nameNormalized, userId) de forma estrita no servidor.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cadastrar sugestao frequente (Priority: P1)
@@ -44,7 +48,7 @@ Como usuario, quero selecionar uma sugestao cadastrada para registrar consumo ra
 
 **Acceptance Scenarios**:
 
-1. **Given** que tenho sugestoes salvas, **When** seleciono uma sugestao para consumo, **Then** o registro e criado com os dados da sugestao.
+1. **Given** que tenho sugestoes salvas, **When** seleciono uma sugestao para consumo, **Then** o sistema solicita a quantidade antes de criar o registro de consumo correspondente.
 2. **Given** que nao tenho sugestoes salvas, **When** acesso a lista de sugestoes, **Then** vejo um estado vazio com orientacao para criar a primeira sugestao (ou converter conta, se estiver em modo visitante).
 
 ---
@@ -69,6 +73,7 @@ Como usuario, quero editar ou remover sugestoes para manter minha lista atualiza
 - Cadastro com valor de proteina igual a zero ou negativo deve ser rejeitado com mensagem clara.
 - Nome de alimento vazio ou composto apenas por espacos deve ser rejeitado.
 - Tentativa de uso de sugestao removida em outra sessao deve falhar com orientacao para atualizar a lista.
+- A exclusao de uma sugestao de consumo deixa os registros historicos (`RegistroConsumo`) intactos. O campo `suggestionId` do historico mantem o identificador da sugestao deletada sem quebrar a renderizacao da interface.
 - Em falha temporaria de persistencia, o sistema deve informar erro e permitir nova tentativa sem perder os dados digitados.
 
 ## Requirements *(mandatory)*
@@ -86,6 +91,7 @@ Como usuario, quero editar ou remover sugestoes para manter minha lista atualiza
 - **FR-009**: System MUST exibir mensagens de erro claras para falhas de validacao e falhas de persistencia.
 - **FR-010**: System MUST manter as sugestoes separadas por usuario, sem vazamento de dados entre contas.
 - **FR-011**: System MUST exigir conversao para conta autenticada antes de permitir persistencia de sugestoes no modo visitante.
+- **FR-012**: System MUST validar as escritas no banco de dados (Firestore) para a subcoleção `suggestions`, exigindo que o usuário autenticado seja o dono do documento (`isOwner`) e que os dados gravados contenham campos válidos (`name`, `proteinPerPortion`, `createdAt`, `updatedAt`, `nameNormalized`, `userId`).
 
 ### Key Entities *(include if feature involves data)*
 

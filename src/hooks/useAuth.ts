@@ -28,7 +28,7 @@ export function useAuth() {
         if (userDoc.exists()) {
           setUser(userDoc.data() as UserProfile);
         } else {
-          const newUser: any = {
+          const newUser: UserProfile = {
             uid: firebaseUser.uid,
             displayName: firebaseUser.displayName || 'Usuário',
             email: firebaseUser.email || '', // Fallback para cumprir regras do Firestore

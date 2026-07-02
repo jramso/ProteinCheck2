@@ -47,3 +47,12 @@ Authorization Rules:
 - Usuario 1:N SugestaoConsumo
 - Usuario 1:N RegistroConsumo
 - SugestaoConsumo 1:N RegistroConsumo (referencia opcional)
+
+## Authorization & Security Rules (Firestore)
+- **Path**: `users/{userId}/suggestions/{suggestionId}`
+- **Operations & Validation**:
+  - `read`/`delete`: Permitido se `isOwner(userId)` (usuário logado é dono dos dados).
+  - `create`/`update`: Permitido se `isOwner(userId)` e a payload passar na validação `isValidSuggestion(request.resource.data)` no servidor, que checa:
+    - Campos obrigatórios presentes: `name`, `proteinPerPortion`, `createdAt`, `updatedAt`, `nameNormalized`, `userId`.
+    - Tipos de dados corretos: strings para nomes, número positivo para proteína, timestamps para datas.
+    - O campo `userId` do payload deve bater com a credencial autenticada do usuário.

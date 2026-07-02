@@ -12,8 +12,18 @@ interface HistoryProps {
 export default function HistoryView({ user, meals, onNavigate }: HistoryProps) {
   const dailyAverages = meals.length > 0 ? Math.round(meals.reduce((acc, m) => acc + m.protein, 0) / 7) : 0;
 
-  const groupedMeals = meals.reduce((acc: any, meal) => {
-    const date = meal.timestamp?.toDate ? meal.timestamp.toDate() : new Date(meal.timestamp);
+  const groupedMeals = meals.reduce((acc: Record<string, { meals: Meal[]; total: number }>, meal) => {
+    let date: Date;
+    if (meal.timestamp) {
+      if (typeof meal.timestamp === 'object' && 'toDate' in meal.timestamp && typeof meal.timestamp.toDate === 'function') {
+        date = meal.timestamp.toDate();
+      } else {
+        const parsedDate = new Date(meal.timestamp as any);
+        date = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+      }
+    } else {
+      date = new Date();
+    }
     const dateString = date.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
     if (!acc[dateString]) acc[dateString] = { meals: [], total: 0 };
     acc[dateString].meals.push(meal);
@@ -49,7 +59,7 @@ export default function HistoryView({ user, meals, onNavigate }: HistoryProps) {
       </div>
 
       <div className="space-y-8">
-        {Object.entries(groupedMeals).map(([date, data]: any) => (
+        {Object.entries(groupedMeals).map(([date, data]: [string, { meals: Meal[]; total: number }]) => (
           <div key={date} className="space-y-4">
             <div className="flex justify-between items-center px-1">
               <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">{date}</h3>

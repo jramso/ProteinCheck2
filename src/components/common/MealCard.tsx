@@ -8,7 +8,17 @@ interface MealCardProps {
 }
 
 export const MealCard: React.FC<MealCardProps> = ({ meal, onClick }) => {
-  const mealDate = meal.timestamp?.toDate ? meal.timestamp.toDate() : new Date(meal.timestamp);
+  let mealDate: Date;
+  if (meal.timestamp) {
+    if (typeof meal.timestamp === 'object' && 'toDate' in meal.timestamp && typeof meal.timestamp.toDate === 'function') {
+      mealDate = meal.timestamp.toDate();
+    } else {
+      const parsedDate = new Date(meal.timestamp as any);
+      mealDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+    }
+  } else {
+    mealDate = new Date();
+  }
   const timeStr = mealDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
@@ -27,7 +37,14 @@ export const MealCard: React.FC<MealCardProps> = ({ meal, onClick }) => {
       <div className="flex-1">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-bold text-slate-900">{meal.name}</h3>
+            <h3 className="font-bold text-slate-900 flex items-center gap-1.5">
+              {meal.name}
+              {meal.suggestionId && (
+                <span className="text-[8px] bg-indigo-50 text-indigo-600 font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                  Sugestão
+                </span>
+              )}
+            </h3>
             <p className="text-xs text-slate-400 font-medium">{timeStr}</p>
           </div>
           <span className="text-sm font-black text-indigo-600">+{meal.protein}g</span>

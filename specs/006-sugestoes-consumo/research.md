@@ -24,3 +24,8 @@
 - Decision: Implementar normalizacao e validacoes com recursos nativos de TypeScript/JavaScript.
 - Rationale: Segue restricao de stack e reduz custo de manutencao.
 - Alternatives considered: Introduzir biblioteca de normalizacao/validacao (rejeitado por necessidade baixa).
+
+## Decision 6: Validação estrita no Firestore Rules para a subcoleção de sugestões
+- Decision: Validar as escritas de sugestões no lado do servidor (Firestore Rules) exigindo que o usuário seja o dono (`isOwner`) e que todos os campos obrigatórios (`name`, `proteinPerPortion`, `createdAt`, `updatedAt`, `nameNormalized`, `userId`) existam e sejam do tipo correto através de uma função auxiliar `isValidSuggestion(data)` no servidor.
+- Rationale: Garante integridade e segurança dos dados no banco de dados, alinhado com o princípio de "Confiança Zero" e em conformidade com o que já é feito para refeições (`isValidMeal`).
+- Alternatives considered: Confiar apenas nas validações do cliente (rejeitado por vulnerabilidade de segurança).
