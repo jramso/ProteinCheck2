@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: protein-check-in
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    # Option for development override (uncomment lines below to run in dev mode with live code sync)
+    # command: npm run dev
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules

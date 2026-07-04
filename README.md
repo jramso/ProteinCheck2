@@ -78,6 +78,41 @@ Acesse a aplicação através do endereço: `http://localhost:3000`
 
 ---
 
+## Como Rodar com Docker (Docker Compose)
+
+Você também pode executar toda a aplicação de forma rápida e isolada usando o **Docker** e o **Docker Compose**.
+
+### Pré-requisitos
+* **Docker** e **Docker Compose** instalados na sua máquina.
+
+### Passo a Passo
+
+1. **Configurar as Variáveis de Ambiente:**
+   Certifique-se de que possui o arquivo `.env` na raiz do projeto com as chaves necessárias (conforme a seção anterior).
+
+2. **Iniciar os Containers:**
+   Execute o comando abaixo para construir a imagem e iniciar o serviço em segundo plano:
+   ```bash
+   docker compose up -d --build
+   ```
+
+3. **Verificar os Logs (Opcional):**
+   Para acompanhar a inicialização e os logs da aplicação:
+   ```bash
+   docker compose logs -f
+   ```
+
+4. **Acessar a Aplicação:**
+   Abra o navegador em: `http://localhost:3000`
+
+5. **Parar os Containers:**
+   Para parar e remover os containers criados:
+   ```bash
+   docker compose down
+   ```
+
+---
+
 ## Estrutura de Scripts do `package.json`
 
 * `npm run dev`: Inicia o servidor Node/Express rodando com TypeScript e o Vite acoplado em ambiente de desenvolvimento.
