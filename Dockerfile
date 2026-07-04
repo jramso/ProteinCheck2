@@ -17,11 +17,11 @@ COPY . .
 RUN npm run build
 
 # Expose the application port
-EXPOSE 3000
+EXPOSE 8080
 
 # Set environment variables default
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=8080
 
 # Command to run the application using tsx runner
 CMD ["npx", "tsx", "server.ts"]

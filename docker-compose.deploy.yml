@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  app:
+    image: jramsodocker/proteincheck-app:latest
+    container_name: proteincheck-app-prod
+    restart: unless-stopped
+    ports:
+      - "8085:8080"
+    env_file:
+      - .env
